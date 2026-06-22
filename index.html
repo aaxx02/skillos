@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SkillOS">
+<title>SkillOS</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f0f13;--bg2:#16161d;--bg3:#1c1c26;--bg4:#22222f;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8e8f0;--text2:#9090a8;--text3:#5a5a72;
+  --purple:#8b7ff0;--purple-dim:rgba(139,127,240,0.15);--purple-mid:rgba(139,127,240,0.3);
+  --green:#4eca8b;--green-dim:rgba(78,202,139,0.13);
+  --blue:#4da6ff;--blue-dim:rgba(77,166,255,0.13);
+  --amber:#f0a84e;--amber-dim:rgba(240,168,78,0.13);
+  --red:#f06b6b;--red-dim:rgba(240,107,107,0.13);
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+  --r:12px;--r-sm:8px;--r-xs:5px;
+  --nav-h:64px;--safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html{font-size:15px;height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;min-height:100%;overflow-x:hidden;padding-bottom:calc(var(--nav-h) + var(--safe-bottom))}
+
+/* Bottom nav */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-bottom));background:rgba(22,22,29,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:8px;padding-bottom:var(--safe-bottom);z-index:100}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;cursor:pointer;border:none;background:none;color:var(--text3);transition:color 0.15s}
+.nav-tab.active{color:var(--purple)}
+.nav-icon{font-size:22px;line-height:1}
+.nav-label{font-size:10px;letter-spacing:0.02em}
+
+/* Views */
+.view{display:none;padding:1rem 1rem 0.5rem;animation:fadeIn 0.15s ease}
+.view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Page header */
+.page-header{margin-bottom:1.25rem;padding-top:0.25rem}
+.page-title{font-size:20px;font-weight:600}
+.page-sub{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem}
+.card+.card{margin-top:10px}
+
+/* Stat grid */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:0.85rem 1rem}
+.stat-label{font-size:10px;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px}
+.stat-value{font-size:26px;font-weight:600;font-family:var(--mono);line-height:1}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* XP / Level */
+.xp-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:1rem}
+.xp-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.xp-badge{font-family:var(--mono);font-size:11px;background:var(--purple-dim);color:var(--purple);padding:3px 10px;border-radius:20px}
+.xp-label{font-size:14px;font-weight:500}
+.xp-nums{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.xp-bar{height:7px;background:var(--bg4);border-radius:4px;overflow:hidden;margin-top:6px}
+.xp-bar-fill{height:100%;background:linear-gradient(90deg,var(--purple),#b07ff0);border-radius:4px;transition:width 0.5s ease}
+
+/* Phase progress bars */
+.phase-bar-item{margin-bottom:0.85rem}
+.phase-bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.phase-bar-name{font-size:12px;color:var(--text2)}
+.phase-bar-pct{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.phase-bar-track{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.phase-bar-fill{height:100%;border-radius:3px;transition:width 0.5s ease}
+
+/* Heatmap */
+.heatmap{display:grid;grid-template-columns:repeat(18,1fr);gap:3px;margin-bottom:0.5rem}
+.hm-cell{aspect-ratio:1;border-radius:2px;background:var(--bg4)}
+.hm-legend{display:flex;align-items:center;gap:5px}
+.hm-legend-label{font-size:10px;color:var(--text3)}
+.hm-legend-cells{display:flex;gap:3px}
+.hm-legend-cell{width:10px;height:10px;border-radius:2px}
+
+/* Quote card */
+.quote-card{background:var(--purple-dim);border:1px solid var(--purple-mid);border-radius:var(--r);padding:1rem;margin-bottom:1rem}
+.quote-text{font-size:13px;color:var(--text2);line-height:1.6;font-style:italic}
+.quote-attr{font-size:11px;color:var(--text3);margin-top:6px}
+
+/* Streak */
+.streak-row{display:flex;gap:6px;margin-bottom:1rem}
+.streak-dot{flex:1;height:8px;border-radius:4px;background:var(--bg4)}
+.streak-dot.active{background:var(--amber)}
+
+/* Phase list */
+.phase-block{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.phase-header{display:flex;align-items:center;gap:10px;padding:0.9rem 1rem;cursor:pointer;user-select:none}
+.phase-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.phase-title{font-size:13px;font-weight:500;flex:1}
+.phase-sub{font-size:11px;color:var(--text3)}
+.phase-chevron{color:var(--text3);font-size:18px;transition:transform 0.2s;line-height:1}
+.phase-chevron.open{transform:rotate(180deg)}
+.phase-prog-bar{height:2px;background:var(--bg4)}
+.phase-prog-fill{height:100%;transition:width 0.4s ease}
+
+/* Skills */
+.skills-section{display:none}
+.skills-section.open{display:block}
+.skill-row{border-top:1px solid var(--border)}
+.skill-header{display:flex;align-items:center;gap:10px;padding:0.8rem 1rem;cursor:pointer}
+.skill-check{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;transition:all 0.2s}
+.skill-check.done{background:var(--green);border-color:var(--green);color:#000}
+.skill-check.partial{border-color:var(--amber);color:var(--amber)}
+.skill-info{flex:1;min-width:0}
+.skill-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skill-name.done{color:var(--text3);text-decoration:line-through}
+.skill-desc{font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skill-xp{font-family:var(--mono);font-size:11px;color:var(--text3);flex-shrink:0}
+.skill-chevron{color:var(--text3);font-size:16px;transition:transform 0.2s;line-height:1;flex-shrink:0}
+.skill-chevron.open{transform:rotate(180deg)}
+
+/* Subtasks */
+.subtask-panel{display:none;background:var(--bg);padding:0.75rem 1rem 0.75rem 2.75rem;border-top:1px solid var(--border)}
+.subtask-panel.open{display:block}
+.subtask-panel-header{font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+.subtask-item{display:flex;align-items:flex-start;gap:9px;padding:6px 0;cursor:pointer}
+.sub-box{width:16px;height:16px;border-radius:3px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;font-size:10px;transition:all 0.15s}
+.sub-box.done{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.sub-text{font-size:12px;color:var(--text2);line-height:1.5}
+.sub-text.done{color:var(--text3);text-decoration:line-through}
+
+/* Resources */
+.resource-panel{display:none;background:var(--bg);padding:0.6rem 1rem 0.75rem 2.75rem;border-top:1px solid var(--border)}
+.resource-panel.open{display:block}
+.resource-label{font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:7px}
+.resource-link{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--blue);text-decoration:none;padding:4px 0}
+
+/* Deliverables */
+.del-panel{background:var(--bg);border-top:1px solid var(--border);padding:0.85rem 1rem;display:none}
+.del-panel.open{display:block}
+.del-header{font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px}
+.del-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;cursor:pointer;border-bottom:1px solid var(--border)}
+.del-item:last-child{border-bottom:none}
+.del-box{width:20px;height:20px;border-radius:5px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;font-size:12px;transition:all 0.15s}
+.del-box.done{background:var(--purple-dim);border-color:var(--purple);color:var(--purple)}
+.del-info{flex:1}
+.del-text{font-size:12px;color:var(--text2);line-height:1.5}
+.del-text.done{text-decoration:line-through;color:var(--text3)}
+.del-xp{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px}
+
+/* Weekly log */
+.day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:1rem}
+.day-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:0.5rem 0.25rem;text-align:center}
+.day-card.today{border-color:var(--purple)}
+.day-name{font-size:9px;color:var(--text3);margin-bottom:3px;letter-spacing:0.05em}
+.day-date{font-size:9px;color:var(--text3);margin-bottom:5px}
+.day-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--mono);font-size:12px;text-align:center;padding:4px 2px;-moz-appearance:textfield}
+.day-input::-webkit-outer-spin-button,.day-input::-webkit-inner-spin-button{-webkit-appearance:none}
+.day-input:focus{outline:none;border-color:var(--purple)}
+.day-hrs{font-size:9px;color:var(--text3);margin-top:3px}
+
+.week-nav-row{display:flex;align-items:center;gap:8px;margin-bottom:0.85rem}
+.week-nav-btn{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text2);padding:7px 12px;font-size:13px;cursor:pointer;flex-shrink:0}
+.week-nav-btn:active{background:var(--bg3)}
+.week-label{font-size:12px;font-weight:500;flex:1;text-align:center}
+.week-total-badge{font-family:var(--mono);font-size:11px;color:var(--amber);background:var(--amber-dim);padding:3px 8px;border-radius:10px;flex-shrink:0}
+
+.week-stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.wstat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:0.7rem 0.6rem;text-align:center}
+.wstat-val{font-family:var(--mono);font-size:18px;font-weight:600;line-height:1}
+.wstat-label{font-size:10px;color:var(--text3);margin-top:3px}
+
+.notes-label{font-size:10px;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:6px}
+.notes-area{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:13px;padding:0.85rem;resize:none;min-height:100px;line-height:1.6}
+.notes-area:focus{outline:none;border-color:var(--purple)}
+
+.alltime-title{font-size:12px;font-weight:500;color:var(--text2);margin:1rem 0 0.6rem;padding-top:1rem;border-top:1px solid var(--border)}
+
+/* Badges */
+.badges-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.badge-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center;transition:all 0.2s}
+.badge-card.earned{border-color:var(--purple);background:var(--purple-dim)}
+.badge-icon{font-size:30px;margin-bottom:6px;filter:grayscale(1) opacity(0.25)}
+.badge-card.earned .badge-icon{filter:none}
+.badge-name{font-size:12px;font-weight:500;color:var(--text3)}
+.badge-card.earned .badge-name{color:var(--purple)}
+.badge-desc{font-size:10px;color:var(--text3);margin-top:3px;line-height:1.4}
+.badge-count{font-size:11px;color:var(--text2);margin-bottom:0.75rem;text-align:right}
+
+/* Career */
+.career-timeline{position:relative;padding-left:1.75rem;margin-top:0.5rem}
+.career-timeline::before{content:'';position:absolute;left:6px;top:8px;bottom:8px;width:1px;background:var(--border2)}
+.career-step{position:relative;margin-bottom:1.25rem}
+.career-marker{position:absolute;left:-1.75rem;top:4px;width:13px;height:13px;border-radius:50%;border:2px solid var(--border2);background:var(--bg)}
+.career-marker.current{border-color:var(--amber);background:var(--amber-dim)}
+.career-marker.near{border-color:var(--purple)}
+.career-marker.far{border-color:var(--blue)}
+.career-role{font-size:13px;font-weight:500}
+.career-meta{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.5}
+.career-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;margin-top:5px}
+.tag-now{background:var(--amber-dim);color:var(--amber)}
+.tag-p1{background:var(--purple-dim);color:var(--purple)}
+.tag-p2{background:var(--green-dim);color:var(--green)}
+.tag-p3{background:var(--blue-dim);color:var(--blue)}
+
+.principle-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:1rem}
+.principle-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:0.75rem}
+.principle-title{font-size:10px;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:5px}
+.principle-text{font-size:12px;color:var(--text2);line-height:1.5}
+
+/* Settings */
+.settings-section{margin-bottom:1.25rem}
+.settings-label{font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px}
+.settings-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:0.85rem 1rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.settings-item-text{font-size:13px}
+.settings-item-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text2);padding:8px 16px;font-size:13px;cursor:pointer;font-family:var(--sans)}
+.btn:active{background:var(--bg4)}
+.btn-red{color:var(--red);border-color:var(--red-dim);background:var(--red-dim)}
+.btn-purple{color:var(--purple);border-color:var(--purple-mid);background:var(--purple-dim)}
+
+/* Toast */
+.toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-bottom) + 12px);left:50%;transform:translateX(-50%) translateY(8px);background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:9px 16px;font-size:13px;color:var(--text);opacity:0;transition:all 0.25s;pointer-events:none;z-index:999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-xp{font-family:var(--mono);color:var(--green);font-weight:600}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:1rem 0}
+.section-title{font-size:11px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.75rem}
+</style>
+</head>
+<body>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <button class="nav-tab active" onclick="showView('overview')">
+    <span class="nav-icon">⚡</span>
+    <span class="nav-label">Overview</span>
+  </button>
+  <button class="nav-tab" onclick="showView('learn')">
+    <span class="nav-icon">📚</span>
+    <span class="nav-label">Learn</span>
+  </button>
+  <button class="nav-tab" onclick="showView('weekly')">
+    <span class="nav-icon">📅</span>
+    <span class="nav-label">Log</span>
+  </button>
+  <button class="nav-tab" onclick="showView('badges')">
+    <span class="nav-icon">🏆</span>
+    <span class="nav-label">Badges</span>
+  </button>
+  <button class="nav-tab" onclick="showView('more')">
+    <span class="nav-icon">⋯</span>
+    <span class="nav-label">More</span>
+  </button>
+</nav>
+
+<!-- OVERVIEW -->
+<div class="view active" id="view-overview">
+  <div class="page-header">
+    <div class="page-title">SkillOS</div>
+    <div class="page-sub" id="ov-date"></div>
+  </div>
+
+  <div id="ov-quote" class="quote-card" style="display:none">
+    <div class="quote-text" id="ov-quote-text"></div>
+    <div class="quote-attr" id="ov-quote-attr"></div>
+  </div>
+
+  <div class="xp-card">
+    <div class="xp-top">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="xp-badge" id="ov-lvlnum">LVL 1</span>
+        <span class="xp-label" id="ov-lvllabel">Absolute beginner</span>
+      </div>
+      <span class="xp-nums" id="ov-xpnext"></span>
+    </div>
+    <div class="xp-bar"><div class="xp-bar-fill" id="ov-xpbar" style="width:0%"></div></div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total XP</div>
+      <div class="stat-value" id="ov-xp" style="color:var(--purple)">0</div>
+      <div class="stat-sub">of <span id="ov-maxxp">0</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Skills done</div>
+      <div class="stat-value" id="ov-skills" style="color:var(--green)">0</div>
+      <div class="stat-sub">of <span id="ov-skillstotal">0</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Deliverables</div>
+      <div class="stat-value" id="ov-dels" style="color:var(--blue)">0</div>
+      <div class="stat-sub">of <span id="ov-delstotal">0</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Hours logged</div>
+      <div class="stat-value" id="ov-hours" style="color:var(--amber)">0</div>
+      <div class="stat-sub">this week</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <div class="section-title" style="margin-bottom:0.6rem">Weekly streak</div>
+    <div class="streak-row" id="streak-row"></div>
+    <div style="font-size:11px;color:var(--text3)" id="streak-label"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <div class="section-title">Phase progress</div>
+    <div id="ov-phases"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <div class="section-title">Activity — last 84 days</div>
+    <div class="heatmap" id="heatmap"></div>
+    <div class="hm-legend" style="margin-top:6px">
+      <span class="hm-legend-label">Less</span>
+      <div class="hm-legend-cells">
+        <div class="hm-legend-cell" style="background:var(--bg4)"></div>
+        <div class="hm-legend-cell" style="background:rgba(139,127,240,0.3)"></div>
+        <div class="hm-legend-cell" style="background:rgba(139,127,240,0.6)"></div>
+        <div class="hm-legend-cell" style="background:var(--purple)"></div>
+      </div>
+      <span class="hm-legend-label">More</span>
+    </div>
+  </div>
+</div>
+
+<!-- LEARN -->
+<div class="view" id="view-learn">
+  <div class="page-header">
+    <div class="page-title">Learning path</div>
+    <div class="page-sub">Tap a skill to expand checkpoints and resources</div>
+  </div>
+  <div id="learn-container"></div>
+</div>
+
+<!-- WEEKLY LOG -->
+<div class="view" id="view-weekly">
+  <div class="page-header">
+    <div class="page-title">Weekly log</div>
+    <div class="page-sub">Track study hours like you track gym sessions</div>
+  </div>
+
+  <div class="week-nav-row">
+    <button class="week-nav-btn" onclick="changeWeek(-1)">←</button>
+    <span class="week-label" id="wk-label"></span>
+    <button class="week-nav-btn" onclick="changeWeek(1)">→</button>
+    <span class="week-total-badge" id="wk-total">0h</span>
+  </div>
+
+  <div class="day-grid" id="day-grid"></div>
+  <div class="week-stats-row" id="wk-stats"></div>
+
+  <div style="margin-bottom:1rem">
+    <div class="notes-label">Week notes</div>
+    <textarea class="notes-area" id="wk-notes" placeholder="What did you work on? Any breakthroughs or blockers?" rows="4" onchange="saveNotes()"></textarea>
+  </div>
+
+  <div class="alltime-title">All-time</div>
+  <div class="week-stats-row" id="alltime-stats"></div>
+</div>
+
+<!-- BADGES -->
+<div class="view" id="view-badges">
+  <div class="page-header">
+    <div class="page-title">Badges</div>
+    <div class="page-sub" id="badge-count-label">Earned by hitting real milestones</div>
+  </div>
+  <div class="badges-grid" id="badges-grid"></div>
+</div>
+
+<!-- MORE -->
+<div class="view" id="view-more">
+  <div class="page-header">
+    <div class="page-title">More</div>
+  </div>
+
+  <!-- Career -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="section-title">Career path</div>
+    <div class="career-timeline">
+      <div class="career-step">
+        <div class="career-marker current"></div>
+        <div class="career-role">IT Helpdesk</div>
+        <div class="career-meta">Where you are now · Outsourced environment, limited hands-on depth</div>
+        <span class="career-tag tag-now">You are here</span>
+      </div>
+      <div class="career-step">
+        <div class="career-marker near"></div>
+        <div class="career-role">Junior Sysadmin</div>
+        <div class="career-meta">Phase 1 done · Scripting visible at work · First salary conversation</div>
+        <span class="career-tag tag-p1">~Month 6–9</span>
+      </div>
+      <div class="career-step">
+        <div class="career-marker near"></div>
+        <div class="career-role">IT Automation Engineer</div>
+        <div class="career-meta">Phase 2 done · GitHub portfolio built · Move companies if needed</div>
+        <span class="career-tag tag-p2">~Month 10–15</span>
+      </div>
+      <div class="career-step">
+        <div class="career-marker far"></div>
+        <div class="career-role">Cloud / DevOps Engineer</div>
+        <div class="career-meta">Phase 3 done · Cloud cert passed · Real salary breakpoint</div>
+        <span class="career-tag tag-p3">~Month 15–24</span>
+      </div>
+      <div class="career-step">
+        <div class="career-marker far"></div>
+        <div class="career-role">Senior / Remote EU roles</div>
+        <div class="career-meta">Czech + EU remote market opens significantly at this tier</div>
+        <span class="career-tag tag-p3">2–4 years</span>
+      </div>
+    </div>
+    <div class="principle-grid">
+      <div class="principle-card">
+        <div class="principle-title">60–70% rule</div>
+        <div class="principle-text">Apply when you meet 60–70% of job requirements. Nobody meets 100%.</div>
+      </div>
+      <div class="principle-card">
+        <div class="principle-title">Move to move up</div>
+        <div class="principle-text">The jump from helpdesk almost always requires changing companies.</div>
+      </div>
+      <div class="principle-card">
+        <div class="principle-title">Cert after skill</div>
+        <div class="principle-text">Get AZ-900 around month 9–12 — after you have practical knowledge to back it up.</div>
+      </div>
+      <div class="principle-card">
+        <div class="principle-title">Portfolio &gt; CV</div>
+        <div class="principle-text">GitHub with real projects outweighs a polished CV in scripting roles.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <div class="section-title">Settings</div>
+    <div class="settings-item" style="margin-bottom:8px">
+      <div>
+        <div class="settings-item-text">Export progress</div>
+        <div class="settings-item-sub">Download a backup of your data</div>
+      </div>
+      <button class="btn btn-purple" onclick="exportData()">Export</button>
+    </div>
+    <div class="settings-item" style="margin-bottom:8px">
+      <div>
+        <div class="settings-item-text">Import progress</div>
+        <div class="settings-item-sub">Restore from a backup file</div>
+      </div>
+      <button class="btn" onclick="document.getElementById('import-input').click()">Import</button>
+      <input type="file" id="import-input" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+    <div class="settings-item">
+      <div>
+        <div class="settings-item-text">Reset all progress</div>
+        <div class="settings-item-sub">Cannot be undone</div>
+      </div>
+      <button class="btn btn-red" onclick="resetAll()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toast-msg"></span></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────
+const QUOTES = [
+  { text: "You already know the system works. You've done this before — with your body. The only variable is the domain.", attr: "From your plan" },
+  { text: "The gap between what you earn and what you spend, and what you do with that gap.", attr: "Financial fundamental #1" },
+  { text: "Consistency over intensity. You didn't get to 10–12% body fat in 6 weeks.", attr: "The actual pattern" },
+  { text: "Apply when you meet 60–70% of requirements. Nobody waits for 100%.", attr: "The 60–70% rule" },
+  { text: "Certs without ability are transparent in interviews. Skill first.", attr: "On certifications" },
+  { text: "The first month isn't about mastery. It's about proving to yourself you'll actually do this.", attr: "Month 1 goal" },
+  { text: "A script that solves one real recurring task is worth more than finishing 10 tutorial modules.", attr: "On deliverables" },
+  { text: "Scripting makes you the person who eliminates the problem instead of the person who responds to it.", attr: "Why PowerShell matters" },
+];
+
+const PHASES = [
+  {
+    id:"ps", title:"Phase 1 — PowerShell", duration:"Months 1–3", color:"#8b7ff0",
+    skills:[
+      { id:"ps_env", name:"Environment setup", xp:50, desc:"Install PS7, VS Code, and the PS extension.",
+        subtasks:["Install PowerShell 7 (not Windows PowerShell 5 — different product)","Install VS Code from code.visualstudio.com","Install the PowerShell extension in VS Code (by Microsoft)","Run $PSVersionTable — confirm version 7+","Run your first 5 cmdlets: Get-Date, Get-Process, Get-Location, Get-ChildItem, Get-Help","Set your VS Code terminal default to PowerShell 7"],
+        resources:[{label:"PowerShell 7 download",url:"https://github.com/PowerShell/PowerShell/releases"},{label:"VS Code download",url:"https://code.visualstudio.com/"},{label:"PowerShell VS Code extension",url:"https://marketplace.visualstudio.com/items?itemName=ms-vscode.PowerShell"}]},
+      { id:"ps_basics", name:"Core syntax & pipeline", xp:100, desc:"Variables, cmdlets, and the pipe operator — the vocabulary.",
+        subtasks:["Understand the Verb-Noun cmdlet pattern (Get-Process, Set-Location)","Declare and use variables: $name = 'Tony'","String interpolation: \"Hello $name\"","Use the pipeline: Get-Process | Sort-Object CPU | Select-Object -First 5","Filter with Where-Object: Get-Process | Where-Object {$_.CPU -gt 10}","Output to file: Get-Process | Out-File 'log.txt'","Format output: Format-Table, Format-List"],
+        resources:[{label:"Microsoft PS 101 docs",url:"https://learn.microsoft.com/en-us/powershell/scripting/learn/ps101/00-introduction"},{label:"Month of Lunches (book — best structured intro)",url:"https://www.manning.com/books/learn-powershell-in-a-month-of-lunches"}]},
+      { id:"ps_logic", name:"Logic & loops", xp:100, desc:"If/else, foreach, while — building blocks of real scripts.",
+        subtasks:["Write an if / elseif / else block with a real condition","Use a foreach loop over a list of items","Use a for loop with a counter variable","Use a while loop with a break condition","Combine loops with pipeline output","Use break and continue","Write a script that loops through a folder and processes each file"],
+        resources:[{label:"PS flow control docs",url:"https://learn.microsoft.com/en-us/powershell/scripting/lang-spec/chapter-08"}]},
+      { id:"ps_files", name:"File system operations", xp:100, desc:"Read, write, copy, move — the most common helpdesk automation.",
+        subtasks:["Read a file: Get-Content","Write to a file: Set-Content and Add-Content","Read a CSV: Import-Csv","Write a CSV: Export-Csv","Copy, move, and delete files and folders","Create folders and check if paths exist with Test-Path","Build a script that reads a CSV and creates a folder per row"],
+        resources:[{label:"PS file management docs",url:"https://learn.microsoft.com/en-us/powershell/scripting/samples/working-with-files-and-folders"}]},
+      { id:"ps_ad", name:"Active Directory automation", xp:150, desc:"The highest-value helpdesk automation — user & account management.",
+        subtasks:["Install and import the ActiveDirectory module","Get a user: Get-ADUser -Identity 'username' -Properties *","Search users: Get-ADUser -Filter {Department -eq 'IT'}","Reset a password: Set-ADAccountPassword","Unlock an account: Unlock-ADAccount","Enable/disable: Enable-ADAccount / Disable-ADAccount","Export all users to CSV: Get-ADUser -Filter * | Export-Csv","Get group memberships for a user"],
+        resources:[{label:"AD module reference",url:"https://learn.microsoft.com/en-us/powershell/module/activedirectory/"},{label:"TechSnips — real-world PS videos",url:"https://www.youtube.com/@TechSnips"}]},
+      { id:"ps_error", name:"Error handling", xp:100, desc:"Scripts that fail silently are dangerous. Handle errors properly.",
+        subtasks:["Understand terminating vs non-terminating errors","Write a Try / Catch / Finally block","Set $ErrorActionPreference = 'Stop'","Write error messages with timestamps","Log errors to a file automatically","Use -ErrorVariable to capture cmdlet errors"],
+        resources:[{label:"PS error handling deep dive",url:"https://learn.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-exceptions"}]},
+      { id:"ps_functions", name:"Functions & reusable code", xp:150, desc:"Stop copy-pasting. Build reusable blocks you can call from anywhere.",
+        subtasks:["Write a basic function with the function keyword","Add a param() block with parameters","Add parameter types and [Parameter(Mandatory)] flag","Return values from functions","Use [CmdletBinding()] for advanced functions","Save functions in a .psm1 module file","Import your module with Import-Module"],
+        resources:[{label:"PS functions docs",url:"https://learn.microsoft.com/en-us/powershell/scripting/learn/ps101/09-functions"}]},
+      { id:"ps_schedule", name:"Scheduling & unattended automation", xp:100, desc:"Scripts that run themselves while you sleep.",
+        subtasks:["Use Windows Task Scheduler to run a PS script on a schedule","Set the correct execution policy for scheduled tasks","Write timestamped logs so you know if tasks ran","Run scripts with specific service account credentials","Test a scheduled task by triggering it manually","Build a script that checks something nightly and alerts you if it fails"],
+        resources:[{label:"Task Scheduler + PowerShell",url:"https://learn.microsoft.com/en-us/powershell/scripting/samples/creating-a-scheduled-task"}]},
+    ],
+    deliverables:[
+      {id:"del_ps_users",text:"Script: export all AD users to spreadsheet with key fields",xp:100},
+      {id:"del_ps_reset",text:"Script: automate account unlock / password reset with logging",xp:100},
+      {id:"del_ps_jobtask",text:"Script: automate one real recurring task at your actual job",xp:150},
+      {id:"del_ps_demo",text:"Action: demo a script to your manager or a colleague",xp:50},
+    ]
+  },
+  {
+    id:"py", title:"Phase 2 — Python", duration:"Months 4–7", color:"#4eca8b",
+    skills:[
+      { id:"py_setup", name:"Python environment", xp:50, desc:"Get the tooling right before writing a line.",
+        subtasks:["Install Python 3.12+ from python.org","Verify: python --version in terminal","Install the Python extension in VS Code","Understand pip: pip install requests","Create a virtual environment: python -m venv env","Activate the venv and understand why it matters","Install a package, import it, use it in a script"],
+        resources:[{label:"Python download",url:"https://www.python.org/downloads/"},{label:"VS Code Python setup",url:"https://code.visualstudio.com/docs/python/python-tutorial"}]},
+      { id:"py_syntax", name:"Core syntax & data types", xp:100, desc:"Variables, strings, lists, dicts — the vocabulary of Python.",
+        subtasks:["Variables and types: str, int, float, bool","String operations: slicing, f-strings, .split(), .strip(), .upper()","Lists: create, index, slice, append, remove, sort","Dictionaries: create, access, iterate, .get(), .keys(), .values()","Tuples and sets — when to use each","Type conversion: int(), str(), float()","Understand None vs 0 vs empty string"],
+        resources:[{label:"Automate the Boring Stuff (free online)",url:"https://automatetheboringstuff.com/"},{label:"CS50P — Harvard Python course (free)",url:"https://cs50.harvard.edu/python/"}]},
+      { id:"py_logic", name:"Control flow", xp:100, desc:"If/else, loops, comprehensions — how Python thinks.",
+        subtasks:["if / elif / else with real conditions","for loops over lists and ranges","while loops with a condition","break, continue, and pass","List comprehensions: [x*2 for x in range(10) if x > 3]","Use enumerate() to get index and value together","Use zip() to iterate two lists in parallel"],
+        resources:[{label:"Automate Boring Stuff — ch.2",url:"https://automatetheboringstuff.com/2e/chapter2/"}]},
+      { id:"py_functions", name:"Functions & scope", xp:100, desc:"Write reusable, readable code instead of copy-pasting.",
+        subtasks:["Define functions with def","Positional and keyword arguments","Default parameter values","Return single and multiple values","Understand local vs global scope","Write a docstring for every function","Understand *args and **kwargs at a conceptual level"],
+        resources:[{label:"Automate Boring Stuff — ch.3",url:"https://automatetheboringstuff.com/2e/chapter3/"}]},
+      { id:"py_files", name:"Files & data handling", xp:100, desc:"Read, write, and process files — core of most automation.",
+        subtasks:["Open and read text files with open() and with statements","Write to files: write mode ('w') vs append mode ('a')","Read CSVs with the csv module","Write CSVs with csv.writer","Parse JSON: json.loads() and json.dumps()","Read and write JSON files","Use pathlib.Path for modern path handling","Handle FileNotFoundError with try/except"],
+        resources:[{label:"Automate Boring Stuff — ch.9",url:"https://automatetheboringstuff.com/2e/chapter9/"}]},
+      { id:"py_os", name:"OS & system interaction", xp:100, desc:"Control files, folders, and processes from Python.",
+        subtasks:["Use os.path for path manipulation","Use pathlib.Path as the modern alternative","List directory contents with Path.iterdir()","Create, rename, and delete files and folders","Read environment variables: os.environ.get()","Run shell commands: subprocess.run()","Get and change the current working directory"],
+        resources:[{label:"Automate Boring Stuff — ch.10",url:"https://automatetheboringstuff.com/2e/chapter10/"}]},
+      { id:"py_requests", name:"APIs & HTTP", xp:150, desc:"Connect your scripts to the internet — fetch data, trigger actions.",
+        subtasks:["Install and import the requests library","Make a GET request: requests.get(url)","Parse a JSON response: response.json()","Handle errors: response.raise_for_status()","Make a POST request with a JSON body","Add headers (API keys) to requests","Build a script that calls a public API and does something with the data"],
+        resources:[{label:"requests library docs",url:"https://requests.readthedocs.io/"},{label:"Free public APIs list",url:"https://github.com/public-apis/public-apis"}]},
+      { id:"py_pandas", name:"Data manipulation with pandas", xp:150, desc:"Handle spreadsheets programmatically. Hugely employable.",
+        subtasks:["Install pandas: pip install pandas","Load a CSV: pd.read_csv('file.csv')","Inspect a DataFrame: .head(), .info(), .describe()","Select columns and filter rows by condition","Rename columns with .rename()","Handle missing values: .dropna(), .fillna()","Export to CSV: .to_csv(index=False)","Group and aggregate: .groupby().sum()"],
+        resources:[{label:"pandas getting started",url:"https://pandas.pydata.org/docs/getting_started/intro_tutorials/"},{label:"Kaggle pandas course (free)",url:"https://www.kaggle.com/learn/pandas"}]},
+    ],
+    deliverables:[
+      {id:"del_py_monitor",text:"Script: monitor something and send an alert automatically",xp:100},
+      {id:"del_py_spreadsheet",text:"Script: clean and reorganize a messy spreadsheet automatically",xp:100},
+      {id:"del_py_personal",text:"Script: build something that solves your own real problem",xp:150},
+      {id:"del_py_github",text:"Action: push all scripts to a public GitHub profile",xp:100},
+    ]
+  },
+  {
+    id:"sp", title:"Phase 3 — Specialise", duration:"Months 8–12", color:"#4da6ff",
+    skills:[
+      { id:"sp_git", name:"Git & version control", xp:150, desc:"Non-negotiable. Your work history and portfolio live here.",
+        subtasks:["Install Git and configure name/email: git config --global","Create a GitHub account — use your real name, it's a portfolio","git init, git add, git commit — understand what each does","git push to a remote repo on GitHub","git pull to get updates","Create and switch branches: git checkout -b feature-name","Merge a branch back to main: git merge","Write a proper README.md for every project"],
+        resources:[{label:"Git official docs",url:"https://git-scm.com/doc"},{label:"GitHub Skills (free, interactive)",url:"https://skills.github.com/"}]},
+      { id:"sp_cloud", name:"Cloud fundamentals", xp:150, desc:"Understand what cloud actually is before getting certified.",
+        subtasks:["Create a free AWS or Azure account (both have free tiers)","Understand regions, availability zones, and why they exist","Spin up a virtual machine (EC2 on AWS or VM on Azure)","Connect to it via SSH","Stop and delete it — never leave things running on free tier","Understand object storage: S3 or Azure Blob","Understand the basic billing model and how to set budget alerts"],
+        resources:[{label:"AWS free tier",url:"https://aws.amazon.com/free/"},{label:"Azure free tier",url:"https://azure.microsoft.com/en-us/free/"},{label:"John Savill Azure course (YouTube)",url:"https://www.youtube.com/@NTFAQGuy"}]},
+      { id:"sp_iac", name:"Infrastructure as code (intro)", xp:200, desc:"Define infrastructure in code instead of clicking dashboards.",
+        subtasks:["Understand what IaC is and why companies use it","Install Terraform or Azure Bicep (pick one and stick with it)","Write a config that creates one resource (storage bucket/blob)","Run: terraform init → terraform plan → terraform apply","Understand state files and why they matter","Make a change to config and apply the update","Destroy the infrastructure cleanly: terraform destroy","Commit your IaC config to GitHub"],
+        resources:[{label:"Terraform getting started",url:"https://developer.hashicorp.com/terraform/tutorials/aws-get-started"},{label:"Azure Bicep overview",url:"https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/overview"}]},
+      { id:"sp_cert", name:"AZ-900 / AWS Cloud Practitioner", xp:300, desc:"Your first cloud cert. Study after you have practical knowledge.",
+        subtasks:["Choose: AZ-900 (Azure) or AWS Cloud Practitioner","Complete a structured prep course (Microsoft Learn paths are free)","Do at least 200 practice questions across multiple question sets","Score consistently 80%+ on practice exams before booking","Book and pay for the exam — commitment matters","Pass the exam","Add the cert to LinkedIn and CV the same day"],
+        resources:[{label:"Microsoft Learn AZ-900 path (free)",url:"https://learn.microsoft.com/en-us/credentials/certifications/azure-fundamentals/"},{label:"AWS CCP exam guide",url:"https://aws.amazon.com/certification/certified-cloud-practitioner/"},{label:"A Cloud Guru",url:"https://acloudguru.com/"}]},
+      { id:"sp_portfolio", name:"Portfolio project", xp:300, desc:"One real thing you can talk through in an interview.",
+        subtasks:["Pick a project — automation tool, monitoring dashboard, or internal app","Define the problem it solves in one sentence before writing code","Build it — expect it to take longer than planned","Write a README explaining what it does and how to run it","Push to GitHub with clean, readable commit history","Be able to explain every line if asked in an interview","Optional: record a short screen demo for the README"],
+        resources:[{label:"Best README template",url:"https://github.com/othneildrew/Best-README-Template"}]},
+      { id:"sp_apply", name:"Start applying", xp:200, desc:"The point of all of this. Don't wait until you feel ready.",
+        subtasks:["Update LinkedIn with scripting skills, GitHub link, and cert","Write a CV that leads with skills and projects, not job titles","Search: Junior Sysadmin, IT Automation Engineer, Systems Engineer","Identify 10 target roles and track them in a spreadsheet","Apply when you meet 60–70% of requirements — not 100%","Prepare to walk through your portfolio project in detail","Send at least 5 real applications"],
+        resources:[{label:"LinkedIn Jobs",url:"https://www.linkedin.com/jobs/"},{label:"r/ITCareerQuestions wiki",url:"https://www.reddit.com/r/ITCareerQuestions/wiki/index/"}]},
+    ],
+    deliverables:[
+      {id:"del_sp_github",text:"GitHub: 3+ real repos with proper READMEs",xp:150},
+      {id:"del_sp_cert",text:"Milestone: pass AZ-900 or AWS Cloud Practitioner",xp:300},
+      {id:"del_sp_portfolio",text:"Project: one portfolio piece you can explain in an interview",xp:200},
+      {id:"del_sp_apply",text:"Action: submit at least 5 applications above helpdesk level",xp:100},
+    ]
+  }
+];
+
+const BADGES = [
+  {id:"b_first",icon:"⚡",name:"First blood",desc:"Complete your first skill",fn:s=>skillsDoneCount(s)>=1},
+  {id:"b_tooled",icon:"🛠",name:"Tooled up",desc:"Set up your dev environment",fn:s=>s.ps_env},
+  {id:"b_ps_half",icon:"🔮",name:"Halfway there",desc:"Complete 4 Phase 1 skills",fn:s=>["ps_env","ps_basics","ps_logic","ps_files","ps_ad","ps_error","ps_functions","ps_schedule"].filter(k=>s[k]).length>=4},
+  {id:"b_ps_done",icon:"🟣",name:"Shell master",desc:"Complete all Phase 1 skills",fn:s=>["ps_env","ps_basics","ps_logic","ps_files","ps_ad","ps_error","ps_functions","ps_schedule"].every(k=>s[k])},
+  {id:"b_first_del",icon:"🚀",name:"Shipped it",desc:"Complete your first deliverable",fn:s=>allDeliverableIds().some(k=>s[k])},
+  {id:"b_demo",icon:"🎤",name:"Show don't tell",desc:"Demo a script to your manager",fn:s=>s.del_ps_demo},
+  {id:"b_py_start",icon:"🐍",name:"Python activated",desc:"Complete 1 Python skill",fn:s=>["py_setup","py_syntax","py_logic","py_functions","py_files","py_os","py_requests","py_pandas"].some(k=>s[k])},
+  {id:"b_py_done",icon:"🟢",name:"Pythonista",desc:"Complete all Phase 2 skills",fn:s=>["py_setup","py_syntax","py_logic","py_functions","py_files","py_os","py_requests","py_pandas"].every(k=>s[k])},
+  {id:"b_github",icon:"🐙",name:"On the grid",desc:"Push scripts to GitHub",fn:s=>s.del_py_github},
+  {id:"b_cert",icon:"📜",name:"Certified",desc:"Pass your first cloud cert",fn:s=>s.del_sp_cert},
+  {id:"b_portfolio",icon:"💼",name:"Portfolio unlocked",desc:"Complete your portfolio project",fn:s=>s.del_sp_portfolio},
+  {id:"b_applied",icon:"📨",name:"In the arena",desc:"Submit 5+ job applications",fn:s=>s.del_sp_apply},
+  {id:"b_10h",icon:"⏱",name:"10 hours in",desc:"Log 10+ total study hours",fn:s=>totalHours(s)>=10},
+  {id:"b_50h",icon:"🔥",name:"50 hours in",desc:"Log 50+ total study hours",fn:s=>totalHours(s)>=50},
+  {id:"b_100h",icon:"💯",name:"Century",desc:"Log 100+ total study hours",fn:s=>totalHours(s)>=100},
+  {id:"b_streak",icon:"📅",name:"Week warrior",desc:"Log hours every day this week",fn:s=>weekStreak(s)},
+  {id:"b_phase1_dels",icon:"🏁",name:"Phase 1 complete",desc:"All Phase 1 deliverables shipped",fn:s=>["del_ps_users","del_ps_reset","del_ps_jobtask","del_ps_demo"].every(k=>s[k])},
+  {id:"b_all_done",icon:"👑",name:"Job ready",desc:"Complete all three phases",fn:s=>PHASES.every(ph=>ph.skills.every(sk=>s[sk.id]))},
+];
+
+const LEVELS=[
+  {min:0,label:"Absolute beginner"},
+  {min:150,label:"Getting started"},
+  {min:400,label:"Building foundations"},
+  {min:750,label:"Gaining momentum"},
+  {min:1200,label:"Intermediate"},
+  {min:1800,label:"Solid practitioner"},
+  {min:2500,label:"Confident practitioner"},
+  {min:3200,label:"Job-ready"},
+];
+
+// ─── STATE ───────────────────────────────────────────────
+let state = {};
+let weekOffset = 0;
+
+function loadState(){try{return JSON.parse(localStorage.getItem('skillos_v1')||'{}')}catch{return{}}}
+function saveState(){localStorage.setItem('skillos_v1',JSON.stringify(state))}
+
+state = loadState();
+
+// ─── HELPERS ─────────────────────────────────────────────
+function allDeliverableIds(){return PHASES.flatMap(ph=>ph.deliverables.map(d=>d.id))}
+function skillsDoneCount(s){return PHASES.flatMap(ph=>ph.skills.map(sk=>sk.id)).filter(id=>s[id]).length}
+function totalHours(s){return Object.keys(s).filter(k=>k.startsWith('hrs_')).reduce((sum,k)=>sum+(parseFloat(s[k])||0),0)}
+function weekStreak(s){
+  const wk=weekKey(0);
+  return ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].every(d=>(parseFloat(s['hrs_'+wk+'_'+d])||0)>0);
+}
+function weekKey(offset){
+  const d=new Date();
+  d.setDate(d.getDate()-((d.getDay()+6)%7)+offset*7);
+  return d.toISOString().split('T')[0];
+}
+function weekDates(offset){
+  const dates=[];
+  const d=new Date();
+  const mon=new Date(d);
+  mon.setDate(d.getDate()-((d.getDay()+6)%7)+offset*7);
+  for(let i=0;i<7;i++){const x=new Date(mon);x.setDate(mon.getDate()+i);dates.push(x);}
+  return dates;
+}
+function weekHours(offset){
+  const wk=weekKey(offset);
+  return ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].reduce((sum,d)=>sum+(parseFloat(state['hrs_'+wk+'_'+d])||0),0);
+}
+function calcXP(){
+  let xp=0,maxXp=0,skillsDone=0,skillsTotal=0,delsDone=0,delsTotal=0;
+  PHASES.forEach(ph=>{
+    ph.skills.forEach(sk=>{maxXp+=sk.xp;skillsTotal++;if(state[sk.id]){xp+=sk.xp;skillsDone++;}});
+    ph.deliverables.forEach(d=>{maxXp+=d.xp;delsTotal++;if(state[d.id]){xp+=d.xp;delsDone++;}});
+  });
+  return{xp,maxXp,skillsDone,skillsTotal,delsDone,delsTotal};
+}
+function phaseProgress(ph){
+  const done=ph.skills.filter(sk=>state[sk.id]).length;
+  return{done,total:ph.skills.length,pct:Math.round(done/ph.skills.length*100)};
+}
+function getLevel(xp){
+  let lvl=1,label=LEVELS[0].label,prev=0,next=LEVELS[1].min;
+  for(let i=0;i<LEVELS.length;i++){
+    if(xp>=LEVELS[i].min){lvl=i+1;label=LEVELS[i].label;prev=LEVELS[i].min;next=LEVELS[i+1]?LEVELS[i+1].min:LEVELS[i].min;}
+  }
+  const pct=lvl>=LEVELS.length?100:Math.round((xp-prev)/(next-prev)*100);
+  return{lvl,label,pct,next,xp};
+}
+function todayKey(){return new Date().toISOString().split('T')[0]}
+function isToday(date){return date.toISOString().split('T')[0]===todayKey()}
+
+// ─── TOAST ───────────────────────────────────────────────
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').innerHTML=msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ─── VIEWS ───────────────────────────────────────────────
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  const map={overview:0,learn:1,weekly:2,badges:3,more:4};
+  document.querySelectorAll('.nav-tab')[map[name]]?.classList.add('active');
+  if(name==='overview')renderOverview();
+  if(name==='learn')renderLearn();
+  if(name==='weekly')renderWeekly();
+  if(name==='badges')renderBadges();
+}
+
+// ─── OVERVIEW ────────────────────────────────────────────
+function renderOverview(){
+  const{xp,maxXp,skillsDone,skillsTotal,delsDone,delsTotal}=calcXP();
+  const{lvl,label,pct,next}=getLevel(xp);
+
+  document.getElementById('ov-date').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('ov-lvlnum').textContent='LVL '+lvl;
+  document.getElementById('ov-lvllabel').textContent=label;
+  document.getElementById('ov-xpbar').style.width=pct+'%';
+  document.getElementById('ov-xpnext').textContent=xp+' / '+next;
+  document.getElementById('ov-xp').textContent=xp;
+  document.getElementById('ov-maxxp').textContent=maxXp;
+  document.getElementById('ov-skills').textContent=skillsDone;
+  document.getElementById('ov-skillstotal').textContent=skillsTotal;
+  document.getElementById('ov-dels').textContent=delsDone;
+  document.getElementById('ov-delstotal').textContent=delsTotal;
+  document.getElementById('ov-hours').textContent=weekHours(0).toFixed(1);
+
+  // Quote (changes daily)
+  const q=QUOTES[new Date().getDate()%QUOTES.length];
+  const qEl=document.getElementById('ov-quote');
+  qEl.style.display='block';
+  document.getElementById('ov-quote-text').textContent='"'+q.text+'"';
+  document.getElementById('ov-quote-attr').textContent='— '+q.attr;
+
+  // Streak
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const wk=weekKey(0);
+  const streakRow=document.getElementById('streak-row');
+  streakRow.innerHTML=days.map(d=>{
+    const has=(parseFloat(state['hrs_'+wk+'_'+d])||0)>0;
+    return`<div class="streak-dot ${has?'active':''}"></div>`;
+  }).join('');
+  const activeDays=days.filter(d=>(parseFloat(state['hrs_'+wk+'_'+d])||0)>0).length;
+  document.getElementById('streak-label').textContent=activeDays+' of 7 days logged this week';
+
+  // Phase bars
+  document.getElementById('ov-phases').innerHTML=PHASES.map(ph=>{
+    const{done,total,pct}=phaseProgress(ph);
+    return`<div class="phase-bar-item">
+      <div class="phase-bar-top">
+        <span class="phase-bar-name">${ph.title}</span>
+        <span class="phase-bar-pct">${done}/${total} · ${pct}%</span>
+      </div>
+      <div class="phase-bar-track"><div class="phase-bar-fill" style="width:${pct}%;background:${ph.color}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Heatmap
+  const hm=document.getElementById('heatmap');
+  const cells=[];
+  for(let i=83;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const k='day_'+d.toISOString().split('T')[0];
+    const hrs=parseFloat(state[k])||0;
+    let bg='var(--bg4)';
+    if(hrs>0&&hrs<1)bg='rgba(139,127,240,0.3)';
+    else if(hrs>=1&&hrs<2)bg='rgba(139,127,240,0.6)';
+    else if(hrs>=2)bg='var(--purple)';
+    cells.push(`<div class="hm-cell" style="background:${bg}" title="${d.toISOString().split('T')[0]}: ${hrs}h"></div>`);
+  }
+  hm.innerHTML=cells.join('');
+}
+
+// ─── LEARN ───────────────────────────────────────────────
+function renderLearn(){
+  const c=document.getElementById('learn-container');
+  c.innerHTML=PHASES.map(ph=>{
+    const{done,total,pct}=phaseProgress(ph);
+    const isOpen=state['open_phase_'+ph.id];
+    return`<div class="phase-block">
+      <div class="phase-header" onclick="togglePhase('${ph.id}')">
+        <div class="phase-dot" style="background:${ph.color}"></div>
+        <div style="flex:1">
+          <div class="phase-title">${ph.title}</div>
+          <div class="phase-sub">${ph.duration} · ${done}/${total} skills</div>
+        </div>
+        <span class="phase-chevron ${isOpen?'open':''}">⌄</span>
+      </div>
+      <div class="phase-prog-bar"><div class="phase-prog-fill" style="width:${pct}%;background:${ph.color}"></div></div>
+      <div class="skills-section ${isOpen?'open':''}" id="ss-${ph.id}">
+        ${ph.skills.map(sk=>renderSkill(sk)).join('')}
+        ${renderDeliverables(ph)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSkill(sk){
+  const done=state[sk.id];
+  const subDone=sk.subtasks.filter((_,i)=>state['sub_'+sk.id+'_'+i]).length;
+  const isOpen=state['open_sk_'+sk.id];
+  const checkClass=done?'done':subDone>0?'partial':'';
+  const checkContent=done?'✓':subDone>0?'◐':'';
+  return`<div class="skill-row">
+    <div class="skill-header" onclick="toggleSkillExpand('${sk.id}')">
+      <div class="skill-check ${checkClass}" onclick="event.stopPropagation();toggleSkill('${sk.id}',${sk.xp})">${checkContent}</div>
+      <div class="skill-info">
+        <div class="skill-name ${done?'done':''}">${sk.name}</div>
+        <div class="skill-desc">${subDone}/${sk.subtasks.length} checkpoints · ${sk.desc}</div>
+      </div>
+      <span class="skill-xp">${sk.xp}</span>
+      <span class="skill-chevron ${isOpen?'open':''}">⌄</span>
+    </div>
+    <div class="subtask-panel ${isOpen?'open':''}" id="stp-${sk.id}">
+      <div class="subtask-panel-header"><span>Checkpoints</span><span>${subDone}/${sk.subtasks.length}</span></div>
+      ${sk.subtasks.map((st,i)=>{
+        const stDone=state['sub_'+sk.id+'_'+i];
+        return`<div class="subtask-item" onclick="toggleSub('${sk.id}',${i})">
+          <div class="sub-box ${stDone?'done':''}">${stDone?'✓':''}</div>
+          <span class="sub-text ${stDone?'done':''}">${st}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="resource-panel ${isOpen?'open':''}" id="rsp-${sk.id}">
+      <div class="resource-label">Resources</div>
+      ${sk.resources.map(r=>`<a class="resource-link" href="${r.url}" target="_blank">↗ ${r.label}</a>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderDeliverables(ph){
+  const delsDone=ph.deliverables.filter(d=>state[d.id]).length;
+  const isOpen=state['open_phase_'+ph.id];
+  return`<div class="del-panel ${isOpen?'open':''}" id="del-${ph.id}">
+    <div class="del-header">🏁 Deliverables · ${delsDone}/${ph.deliverables.length}</div>
+    ${ph.deliverables.map(d=>`
+      <div class="del-item" onclick="toggleDel('${d.id}',${d.xp})">
+        <div class="del-box ${state[d.id]?'done':''}">${state[d.id]?'✓':''}</div>
+        <div class="del-info">
+          <div class="del-text ${state[d.id]?'done':''}">${d.text}</div>
+          <div class="del-xp">+${d.xp} XP</div>
+        </div>
+      </div>`).join('')}
+  </div>`;
+}
+
+function togglePhase(id){
+  state['open_phase_'+id]=!state['open_phase_'+id];
+  saveState();renderLearn();
+}
+function toggleSkillExpand(id){
+  state['open_sk_'+id]=!state['open_sk_'+id];
+  saveState();renderLearn();
+}
+function toggleSkill(id,xp){
+  const was=state[id];state[id]=!was;saveState();
+  if(!was)toast('<span class="toast-xp">+'+xp+' XP</span> · Skill marked done');
+  updateAll();
+}
+function toggleSub(skId,i){
+  const k='sub_'+skId+'_'+i;
+  state[k]=!state[k];saveState();
+  renderLearn();updateAll();
+}
+function toggleDel(id,xp){
+  const was=state[id];state[id]=!was;saveState();
+  if(!was)toast('<span class="toast-xp">+'+xp+' XP</span> · Deliverable shipped 🚀');
+  updateAll();
+}
+
+// ─── WEEKLY ──────────────────────────────────────────────
+function renderWeekly(){
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const wk=weekKey(weekOffset);
+  const dates=weekDates(weekOffset);
+  const start=dates[0].toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  const end=dates[6].toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  document.getElementById('wk-label').textContent=start+' – '+end;
+
+  let total=0;
+  document.getElementById('day-grid').innerHTML=days.map((d,i)=>{
+    const k='hrs_'+wk+'_'+d;
+    const v=state[k]||'';
+    total+=parseFloat(v)||0;
+    const tod=isToday(dates[i]);
+    return`<div class="day-card ${tod?'today':''}">
+      <div class="day-name">${d}</div>
+      <div class="day-date">${dates[i].getDate()}</div>
+      <input class="day-input" type="number" min="0" max="12" step="0.5" value="${v}" placeholder="0"
+        onchange="saveHours('${wk}','${d}','${dates[i].toISOString().split('T')[0]}',this.value)">
+      <div class="day-hrs">hrs</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('wk-total').textContent=total.toFixed(1)+'h';
+
+  const activeDays=days.filter(d=>(parseFloat(state['hrs_'+wk+'_'+d])||0)>0).length;
+  document.getElementById('wk-stats').innerHTML=`
+    <div class="wstat"><div class="wstat-val" style="color:var(--purple)">${total.toFixed(1)}</div><div class="wstat-label">hours</div></div>
+    <div class="wstat"><div class="wstat-val" style="color:var(--green)">${(total/7).toFixed(1)}</div><div class="wstat-label">avg/day</div></div>
+    <div class="wstat"><div class="wstat-val" style="color:var(--amber)">${activeDays}</div><div class="wstat-label">days active</div></div>
+  `;
+
+  const allHrs=totalHours(state);
+  const allWeeks=Math.max(1,Object.keys(state).filter(k=>k.startsWith('hrs_')).reduce((s,k)=>{s.add(k.split('_').slice(1,3).join('_'));return s;},new Set()).size);
+  document.getElementById('alltime-stats').innerHTML=`
+    <div class="wstat"><div class="wstat-val" style="color:var(--purple)">${allHrs.toFixed(0)}</div><div class="wstat-label">total hrs</div></div>
+    <div class="wstat"><div class="wstat-val" style="color:var(--green)">${(allHrs/allWeeks).toFixed(1)}</div><div class="wstat-label">avg/week</div></div>
+    <div class="wstat"><div class="wstat-val" style="color:var(--blue)">${Math.floor(allHrs/300*100)}<span style="font-size:14px">%</span></div><div class="wstat-label">to 300h</div></div>
+  `;
+
+  document.getElementById('wk-notes').value=state['notes_'+wk]||'';
+}
+
+function saveHours(wk,day,dateKey,val){
+  const v=Math.max(0,parseFloat(val)||0);
+  if(v===0){delete state['hrs_'+wk+'_'+day];delete state['day_'+dateKey];}
+  else{state['hrs_'+wk+'_'+day]=v;state['day_'+dateKey]=v;}
+  saveState();renderWeekly();updateAll();
+}
+function saveNotes(){
+  const wk=weekKey(weekOffset);
+  state['notes_'+wk]=document.getElementById('wk-notes').value;
+  saveState();
+}
+function changeWeek(dir){
+  weekOffset+=dir;
+  if(weekOffset>0)weekOffset=0;
+  renderWeekly();
+}
+
+// ─── BADGES ──────────────────────────────────────────────
+function renderBadges(){
+  const earned=BADGES.filter(b=>b.fn(state)).length;
+  document.getElementById('badge-count-label').textContent=earned+' of '+BADGES.length+' earned';
+  document.getElementById('badges-grid').innerHTML=BADGES.map(b=>{
+    const e=b.fn(state);
+    return`<div class="badge-card ${e?'earned':''}">
+      <div class="badge-icon">${b.icon}</div>
+      <div class="badge-name">${b.name}</div>
+      <div class="badge-desc">${b.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── EXPORT / IMPORT ─────────────────────────────────────
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='skillos-backup-'+todayKey()+'.json';
+  a.click();
+  toast('Progress exported ✓');
+}
+function importData(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      state=JSON.parse(ev.target.result);
+      saveState();updateAll();
+      toast('Progress imported ✓');
+    }catch{toast('Import failed — invalid file');}
+  };
+  r.readAsText(file);
+}
+function resetAll(){
+  if(confirm('Reset ALL progress? This cannot be undone.')){
+    localStorage.removeItem('skillos_v1');
+    state={};updateAll();
+    toast('Progress reset');
+  }
+}
+
+// ─── UPDATE ALL ──────────────────────────────────────────
+function updateAll(){
+  const active=document.querySelector('.view.active');
+  if(!active)return;
+  const id=active.id.replace('view-','');
+  if(id==='overview')renderOverview();
+  if(id==='learn')renderLearn();
+  if(id==='weekly')renderWeekly();
+  if(id==='badges')renderBadges();
+}
+
+// ─── PWA ─────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+
+// ─── INIT ────────────────────────────────────────────────
+renderOverview();
+</script>
+</body>
+</html>
